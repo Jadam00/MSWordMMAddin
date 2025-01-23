@@ -4,18 +4,29 @@
     <title>Word Add-in</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <script>
-        let lastCursorLocation; // To save the user's last cursor location
+        let savedContentControlId = null; // To save the content control ID
 
         Office.onReady(() => {
             console.log("Add-in is ready");
 
-            // Save the cursor location when the document gains focus
+            // Save the cursor location as a content control when the selection changes
             Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, () => {
                 Word.run(async (context) => {
-                    // Save the current cursor location as a range
-                    lastCursorLocation = context.document.getSelection();
-                    lastCursorLocation.load();
+                    // Remove the previous content control if it exists
+                    if (savedContentControlId) {
+                        const existingControl = context.document.contentControls.getById(savedContentControlId);
+                        existingControl.delete(); // Clean up the previous content control
+                        await context.sync();
+                    }
+
+                    // Create a new content control at the current cursor location
+                    const range = context.document.getSelection();
+                    const contentControl = range.insertContentControl();
+                    contentControl.tag = "LastCursorLocation";
+                    savedContentControlId = contentControl.id; // Save the content control ID
+
                     await context.sync();
+                    console.log("Cursor location saved with ContentControl ID:", savedContentControlId);
                 }).catch((error) => {
                     console.error("Error saving cursor location:", error.message);
                 });
@@ -24,15 +35,21 @@
 
         function insertTextAtSavedCursor() {
             Word.run(async (context) => {
-                if (!lastCursorLocation) {
+                if (!savedContentControlId) {
                     console.error("Cursor location not saved. Insert text at the beginning.");
                     context.document.body.insertText("Hello from your Word Add-in!", Word.InsertLocation.start);
                 } else {
-                    // Insert text at the saved cursor location
-                    lastCursorLocation.insertText("Hello from your Word Add-in!", Word.InsertLocation.replace);
+                    // Retrieve the saved content control
+                    const contentControl = context.document.contentControls.getById(savedContentControlId);
+                    contentControl.insertText("Hello from your Word Add-in!", Word.InsertLocation.replace);
+
+                    // Optionally delete the content control after inserting text
+                    contentControl.delete();
+
+                    // Clear the saved ID since the control was deleted
+                    savedContentControlId = null;
                 }
 
-                // Commit the changes
                 await context.sync();
                 console.log("Text inserted at saved cursor location!");
             }).catch((error) => {
