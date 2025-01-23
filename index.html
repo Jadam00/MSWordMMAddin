@@ -47,10 +47,10 @@
             background-color: #005a9e;
         }
 
-        input[type="password"] {
+        input {
             width: 100%;
             padding: 10px;
-            margin: 10px 0 20px;
+            margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
@@ -85,6 +85,7 @@
             font-size: 14px;
             margin: 4px 0;
             border-left: 2px solid #ddd;
+            cursor: grab;
         }
 
         .clickable:hover {
@@ -94,19 +95,21 @@
     </style>
 </head>
 <body>
-    <!-- Password Prompt -->
+    <!-- Login Container -->
     <div id="login-container" class="container">
-        <h1>Enter Password</h1>
+        <h1>Enter Your Credentials</h1>
+        <input type="email" id="email-input" placeholder="Enter email address" />
         <input type="password" id="password-input" placeholder="Enter password" />
-        <button onclick="validatePassword()">Login</button>
-        <p id="error-message" style="color: red; display: none;">Incorrect password. Try again.</p>
+        <button onclick="validateCredentials()">Submit</button>
+        <p id="error-message" style="color: red; display: none;"></p>
     </div>
 
-    <!-- Main Add-In Content -->
+    <!-- Add-In Content -->
     <div id="add-in-content" class="container hidden">
         <h1>Merge Fields</h1>
         <ul>
             <li class="expandable">
+                <span>Do</span>
                 <ul class="hidden">
                     <li class="expandable">
                         <span>Landlord</span>
@@ -140,70 +143,61 @@
     </div>
 
     <script>
-        // Password validation
-		function validatePassword() {
-			const password = document.getElementById("password-input").value;
-			const errorMessage = document.getElementById("error-message");
+        // Email and Password Validation
+        function validateCredentials() {
+            const email = document.getElementById("email-input").value;
+            const password = document.getElementById("password-input").value;
+            const errorMessage = document.getElementById("error-message");
 
-			if (password === "jimmy") {
-				// Hide login and show content
-				document.getElementById("login-container").classList.add("hidden");
-				document.getElementById("add-in-content").classList.remove("hidden");
-			} else {
-				// Show error message
-				errorMessage.style.display = "block";
-			}
-		}
-		// Expand/Collapse Functionality
-		document.addEventListener("DOMContentLoaded", () => {
-			// Handle expand/collapse toggling
-			document.querySelectorAll(".expandable > span").forEach(item => {
-				item.addEventListener("click", function () {
-					const parent = this.parentElement;
-					const sublist = parent.querySelector("ul");
-					if (sublist) {
-						sublist.classList.toggle("hidden");
-						parent.classList.toggle("open");
-					}
-				});
-			});
+            // Check credentials
+            if (email === "justin.adam@focus-property.co.uk" && password === "jimmy") {
+                // Show the main content and hide the login container
+                document.getElementById("login-container").classList.add("hidden");
+                document.getElementById("add-in-content").classList.remove("hidden");
+            } else {
+                // Show an error message
+                errorMessage.style.display = "block";
+                errorMessage.textContent = "Invalid email or password. Please try again.";
+            }
+        }
 
-			// Handle Drag Start
-			    document.querySelectorAll(".clickable").forEach(item => {
-				item.setAttribute("draggable", true); // Make items draggable
-				item.addEventListener("dragstart", (event) => {
-				    event.dataTransfer.setData("text/plain", item.dataset.field); // Pass merge field value
-				    console.log(`Dragging: ${item.dataset.field}`);
-				});
-			    });
-			
-			    // Enable Drop in Word
-			    document.body.addEventListener("dragover", (event) => {
-				event.preventDefault(); // Allow dropping
-			    });
-			
-			    document.body.addEventListener("drop", async (event) => {
-				event.preventDefault(); // Prevent default behavior
-			
-				const field = event.dataTransfer.getData("text/plain"); // Retrieve the merge field
-				if (field) {
-				    try {
-					await Word.run(async (context) => {
-					    // Insert the merge field at the cursor position
-					    const selection = context.document.getSelection();
-					    selection.insertText(field, Word.InsertLocation.replace);
-			
-					    // Sync changes to Word
-					    await context.sync();
-					    console.log(`Dropped and inserted: ${field}`);
-					});
-				    } catch (error) {
-					console.error("Error inserting merge field:", error);
-				    }
-				}
-			    });
-		});
+        // Drag-and-Drop Functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            // Make fields draggable
+            document.querySelectorAll(".clickable").forEach(item => {
+                item.setAttribute("draggable", true);
+                item.addEventListener("dragstart", (event) => {
+                    event.dataTransfer.setData("text/plain", item.dataset.field);
+                    console.log(`Dragging: ${item.dataset.field}`);
+                });
+            });
 
+            // Allow dropping in the Word document
+            document.body.addEventListener("dragover", (event) => {
+                event.preventDefault(); // Allow dragover
+            });
+
+            document.body.addEventListener("drop", async (event) => {
+                event.preventDefault(); // Prevent default drop behavior
+
+                const field = event.dataTransfer.getData("text/plain"); // Get the dragged field
+                if (field) {
+                    try {
+                        await Word.run(async (context) => {
+                            const selection = context.document.getSelection();
+
+                            // Insert the dragged field at the cursor or selection
+                            selection.insertText(field, Word.InsertLocation.replace);
+
+                            await context.sync(); // Sync changes with Word
+                            console.log(`Dropped and inserted: ${field}`);
+                        });
+                    } catch (error) {
+                        console.error("Error inserting merge field:", error);
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html>
