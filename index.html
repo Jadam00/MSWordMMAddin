@@ -14,19 +14,46 @@
             color: #333;
         }
 
-        h1 {
-            font-size: 20px;
-            text-align: center;
-            margin: 20px 0;
-        }
-
         .container {
             max-width: 400px;
-            margin: 0 auto;
+            margin: 50px auto;
             background: #fff;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        button {
+            background-color: #0078d7;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #005a9e;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
         }
 
         ul {
@@ -41,25 +68,16 @@
         }
 
         .expandable > span {
-            display: flex;
-            align-items: center;
             font-weight: bold;
-            font-size: 16px;
         }
 
         .expandable > span:before {
             content: '+';
             margin-right: 8px;
-            font-size: 18px;
-            font-weight: bold;
         }
 
         .expandable.open > span:before {
             content: '-';
-        }
-
-        .hidden {
-            display: none;
         }
 
         .clickable {
@@ -67,7 +85,6 @@
             font-size: 14px;
             margin: 4px 0;
             border-left: 2px solid #ddd;
-            padding-left: 12px;
         }
 
         .clickable:hover {
@@ -77,7 +94,16 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- Password Prompt -->
+    <div id="login-container" class="container">
+        <h1>Enter Password</h1>
+        <input type="password" id="password-input" placeholder="Enter password" />
+        <button onclick="validatePassword()">Submit</button>
+        <p id="error-message" style="color: red; display: none;">Incorrect password. Try again.</p>
+    </div>
+
+    <!-- Main Add-In Content -->
+    <div id="add-in-content" class="container hidden">
         <h1>Merge Fields</h1>
         <ul>
             <li class="expandable">
@@ -115,32 +141,49 @@
     </div>
 
     <script>
-        // Toggle Expand/Collapse
-        document.querySelectorAll(".expandable > span").forEach(item => {
-            item.addEventListener("click", function () {
-                const parent = this.parentElement;
-                const sublist = parent.querySelector("ul");
-                if (sublist) {
-                    sublist.classList.toggle("hidden");
-                    parent.classList.toggle("open");
-                }
+        // Password validation
+        function validatePassword() {
+            const password = document.getElementById("password-input").value;
+            const errorMessage = document.getElementById("error-message");
+
+            if (password === "jimmy") {
+                // Hide login and show content
+                document.getElementById("login-container").classList.add("hidden");
+                document.getElementById("add-in-content").classList.remove("hidden");
+            } else {
+                // Show error message
+                errorMessage.style.display = "block";
+            }
+        }
+
+        // Expand/Collapse Functionality
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll(".expandable > span").forEach(item => {
+                item.addEventListener("click", function () {
+                    const parent = this.parentElement;
+                    const sublist = parent.querySelector("ul");
+                    if (sublist) {
+                        sublist.classList.toggle("hidden");
+                        parent.classList.toggle("open");
+                    }
+                });
             });
-        });
 
-        // Insert Merge Fields into Word
-        document.querySelectorAll(".clickable").forEach(item => {
-            item.addEventListener("click", function () {
-                const field = this.dataset.field;
+            // Merge Field Click Handler
+            document.querySelectorAll(".clickable").forEach(item => {
+                item.addEventListener("click", function () {
+                    const field = this.dataset.field;
 
-                Word.run(async (context) => {
-                    // Insert the merge field text at the cursor position
-                    const selection = context.document.getSelection();
-                    selection.insertText(field, Word.InsertLocation.replace);
+                    Word.run(async (context) => {
+                        // Insert the merge field at the cursor
+                        const selection = context.document.getSelection();
+                        selection.insertText(field, Word.InsertLocation.replace);
 
-                    await context.sync();
-                    console.log(`Inserted: ${field}`);
-                }).catch((error) => {
-                    console.error("Error inserting merge field:", error);
+                        await context.sync();
+                        console.log(`Inserted: ${field}`);
+                    }).catch(error => {
+                        console.error("Error inserting merge field:", error);
+                    });
                 });
             });
         });
