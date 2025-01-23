@@ -1,199 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Add-In</title>
+    <title>Word Add-in</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f9;
-            color: #333;
-        }
+    <script>
+        let lastCursorLocation; // To save the user's last cursor location
 
-        .container {
-            max-width: 400px;
-            margin: 50px auto;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            text-align: center;
-        }
+        Office.onReady(() => {
+            console.log("Add-in is ready");
 
-        h1 {
-            font-size: 20px;
-            margin-bottom: 20px;
-        }
+            // Save the cursor location when the document gains focus
+            Office.context.document.addHandlerAsync(Office.EventType.DocumentSelectionChanged, () => {
+                Word.run(async (context) => {
+                    // Save the current cursor location as a range
+                    lastCursorLocation = context.document.getSelection();
+                    lastCursorLocation.load();
+                    await context.sync();
+                }).catch((error) => {
+                    console.error("Error saving cursor location:", error.message);
+                });
+            });
+        });
 
-        .hidden {
-            display: none;
-        }
+        function insertTextAtSavedCursor() {
+            Word.run(async (context) => {
+                if (!lastCursorLocation) {
+                    console.error("Cursor location not saved. Insert text at the beginning.");
+                    context.document.body.insertText("Hello from your Word Add-in!", Word.InsertLocation.start);
+                } else {
+                    // Insert text at the saved cursor location
+                    lastCursorLocation.insertText("Hello from your Word Add-in!", Word.InsertLocation.replace);
+                }
 
-        button {
-            background-color: #0078d7;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
+                // Commit the changes
+                await context.sync();
+                console.log("Text inserted at saved cursor location!");
+            }).catch((error) => {
+                console.error("Error inserting text:", error.message);
+            });
         }
-
-        button:hover {
-            background-color: #005a9e;
-        }
-
-        input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
-        }
-
-        ul {
-            list-style-type: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        li {
-            cursor: pointer;
-            margin: 5px 0;
-        }
-
-        .expandable > span {
-            font-weight: bold;
-        }
-
-        .expandable > span:before {
-            content: '+';
-            margin-right: 8px;
-        }
-
-        .expandable.open > span:before {
-            content: '-';
-        }
-
-        .clickable {
-            padding-left: 20px;
-            font-size: 14px;
-            margin: 4px 0;
-            border-left: 2px solid #ddd;
-        }
-
-        .clickable:hover {
-            text-decoration: underline;
-            color: #0078d7;
-        }
-    </style>
+    </script>
 </head>
 <body>
-    <!-- Password Prompt -->
-    <div id="login-container" class="container">
-        <h1>Enter Password</h1>
-        <input type="password" id="password-input" placeholder="Enter password" />
-        <button onclick="validatePassword()">Login</button>
-        <p id="error-message" style="color: red; display: none;">Incorrect password. Try again.</p>
-    </div>
-
-    <!-- Main Add-In Content -->
-    <div id="add-in-content" class="container hidden">
-        <h1>Merge Fields</h1>
-        <ul>
-            <li class="expandable">
-                <span>Ola</span>
-                <ul class="hidden">
-                    <li class="expandable">
-                        <span>Landlord</span>
-                        <ul class="hidden">
-                            <li class="clickable" data-field="{{LandlordName}}">Landlord name</li>
-                            <li class="clickable" data-field="{{LandlordAddress1}}">Address line 1</li>
-                            <li class="clickable" data-field="{{LandlordAddress2}}">Address line 2</li>
-                            <li class="clickable" data-field="{{LandlordAddress3}}">Address line 3</li>
-                            <li class="clickable" data-field="{{LandlordAddress4}}">Address line 4</li>
-                            <li class="clickable" data-field="{{LandlordPostcode}}">Postcode</li>
-                        </ul>
-                    </li>
-                    <li class="expandable">
-                        <span>Property</span>
-                        <ul class="hidden">
-                            <li class="clickable" data-field="{{PropertyAddress}}">Address</li>
-                            <li class="clickable" data-field="{{PropertyArea}}">Area</li>
-                        </ul>
-                    </li>
-                    <li class="expandable">
-                        <span>Tenant</span>
-                        <ul class="hidden">
-                            <li class="clickable" data-field="{{TenantName}}">Name</li>
-                            <li class="clickable" data-field="{{TenantAddress}}">Address</li>
-                            <li class="clickable" data-field="{{RentAmount}}">Rent amount</li>
-                        </ul>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-    </div>
-
-    <script>
-        // Password validation
-		function validatePassword() {
-			const password = document.getElementById("password-input").value;
-			const errorMessage = document.getElementById("error-message");
-
-			if (password === "jimmy") {
-				// Hide login and show content
-				document.getElementById("login-container").classList.add("hidden");
-				document.getElementById("add-in-content").classList.remove("hidden");
-			} else {
-				// Show error message
-				errorMessage.style.display = "block";
-			}
-		}
-
-		// Expand/Collapse Functionality
-		document.addEventListener("DOMContentLoaded", () => {
-			// Handle expand/collapse toggling
-			document.querySelectorAll(".expandable > span").forEach(item => {
-				item.addEventListener("click", function () {
-					const parent = this.parentElement;
-					const sublist = parent.querySelector("ul");
-					if (sublist) {
-						sublist.classList.toggle("hidden");
-						parent.classList.toggle("open");
-					}
-				});
-			});
-
-			// Merge Field Click Handler
-			document.querySelectorAll(".clickable").forEach(item => {
-				item.addEventListener("click", async function () {
-					const field = this.dataset.field;
-
-					try {
-						await Word.run(async (context) => {
-							// Get the current selection in the Word document
-							const selection = context.document.getSelection();
-
-							// Insert the merge field text at the cursor or selection
-							selection.insertText(field, Word.InsertLocation.replace);
-
-							// Synchronize the document state
-							await context.sync();
-							console.log(`Inserted: ${field}`);
-						});
-					} catch (error) {
-						console.error("Error inserting merge field:", error);
-					}
-				});
-			});
-		});
-
-    </script>
+    <h1>Insert Text Add-in</h1>
+    <button onclick="insertTextAtSavedCursor()">Insert Text</button>
 </body>
 </html>
