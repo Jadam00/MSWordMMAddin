@@ -98,7 +98,7 @@
     <div id="login-container" class="container">
         <h1>Enter Password</h1>
         <input type="password" id="password-input" placeholder="Enter password" />
-        <button onclick="validatePassword()">Submit</button>
+        <button onclick="validatePassword()">Login</button>
         <p id="error-message" style="color: red; display: none;">Incorrect password. Try again.</p>
     </div>
 
@@ -142,51 +142,58 @@
 
     <script>
         // Password validation
-        function validatePassword() {
-            const password = document.getElementById("password-input").value;
-            const errorMessage = document.getElementById("error-message");
+		function validatePassword() {
+			const password = document.getElementById("password-input").value;
+			const errorMessage = document.getElementById("error-message");
 
-            if (password === "jimmy") {
-                // Hide login and show content
-                document.getElementById("login-container").classList.add("hidden");
-                document.getElementById("add-in-content").classList.remove("hidden");
-            } else {
-                // Show error message
-                errorMessage.style.display = "block";
-            }
-        }
+			if (password === "jimmy") {
+				// Hide login and show content
+				document.getElementById("login-container").classList.add("hidden");
+				document.getElementById("add-in-content").classList.remove("hidden");
+			} else {
+				// Show error message
+				errorMessage.style.display = "block";
+			}
+		}
 
-        // Expand/Collapse Functionality
-        document.addEventListener("DOMContentLoaded", () => {
-            document.querySelectorAll(".expandable > span").forEach(item => {
-                item.addEventListener("click", function () {
-                    const parent = this.parentElement;
-                    const sublist = parent.querySelector("ul");
-                    if (sublist) {
-                        sublist.classList.toggle("hidden");
-                        parent.classList.toggle("open");
-                    }
-                });
-            });
+		// Expand/Collapse Functionality
+		document.addEventListener("DOMContentLoaded", () => {
+			// Handle expand/collapse toggling
+			document.querySelectorAll(".expandable > span").forEach(item => {
+				item.addEventListener("click", function () {
+					const parent = this.parentElement;
+					const sublist = parent.querySelector("ul");
+					if (sublist) {
+						sublist.classList.toggle("hidden");
+						parent.classList.toggle("open");
+					}
+				});
+			});
 
-            // Merge Field Click Handler
-            document.querySelectorAll(".clickable").forEach(item => {
-                item.addEventListener("click", function () {
-                    const field = this.dataset.field;
+			// Merge Field Click Handler
+			document.querySelectorAll(".clickable").forEach(item => {
+				item.addEventListener("click", async function () {
+					const field = this.dataset.field;
 
-                    Word.run(async (context) => {
-                        // Insert the merge field at the cursor
-                        const selection = context.document.getSelection();
-                        selection.insertText(field, Word.InsertLocation.replace);
+					try {
+						await Word.run(async (context) => {
+							// Get the current selection in the Word document
+							const selection = context.document.getSelection();
 
-                        await context.sync();
-                        console.log(`Inserted: ${field}`);
-                    }).catch(error => {
-                        console.error("Error inserting merge field:", error);
-                    });
-                });
-            });
-        });
+							// Insert the merge field text at the cursor or selection
+							selection.insertText(field, Word.InsertLocation.replace);
+
+							// Synchronize the document state
+							await context.sync();
+							console.log(`Inserted: ${field}`);
+						});
+					} catch (error) {
+						console.error("Error inserting merge field:", error);
+					}
+				});
+			});
+		});
+
     </script>
 </body>
 </html>
