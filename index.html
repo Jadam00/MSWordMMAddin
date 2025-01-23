@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Add-In</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        .expandable > span {
+            font-weight: bold;
+        }
+        .hidden {
+            display: none;
+        }
+        .clickable:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Merge Fields</h1>
+    <ul>
+        <li class="expandable">
+            <span>+ Do</span>
+            <ul class="hidden">
+                <li class="expandable">
+                    <span>+ Landlord</span>
+                    <ul class="hidden">
+                        <li class="clickable" data-field="{{LandlordName}}">Landlord name</li>
+                        <li class="clickable" data-field="{{LandlordAddress1}}">Address line 1</li>
+                        <li class="clickable" data-field="{{LandlordAddress2}}">Address line 2</li>
+                        <li class="clickable" data-field="{{LandlordAddress3}}">Address line 3</li>
+                        <li class="clickable" data-field="{{LandlordAddress4}}">Address line 4</li>
+                        <li class="clickable" data-field="{{LandlordPostcode}}">Postcode</li>
+                    </ul>
+                </li>
+                <li class="expandable">
+                    <span>+ Property</span>
+                    <ul class="hidden">
+                        <li class="clickable" data-field="{{PropertyAddress}}">Address</li>
+                        <li class="clickable" data-field="{{PropertyArea}}">Area</li>
+                    </ul>
+                </li>
+                <li class="expandable">
+                    <span>+ Tenant</span>
+                    <ul class="hidden">
+                        <li class="clickable" data-field="{{TenantName}}">Name</li>
+                        <li class="clickable" data-field="{{TenantAddress}}">Address</li>
+                        <li class="clickable" data-field="{{RentAmount}}">Rent amount</li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+    </ul>
+
+    <script>
+        // Toggle Expand/Collapse
+        document.querySelectorAll(".expandable > span").forEach(item => {
+            item.addEventListener("click", function () {
+                const sublist = this.nextElementSibling;
+                if (sublist.classList.contains("hidden")) {
+                    sublist.classList.remove("hidden");
+                    this.textContent = this.textContent.replace("+", "-");
+                } else {
+                    sublist.classList.add("hidden");
+                    this.textContent = this.textContent.replace("-", "+");
+                }
+            });
+        });
+
+        // Insert Merge Fields into Word
+        document.querySelectorAll(".clickable").forEach(item => {
+            item.addEventListener("click", function () {
+                const field = this.dataset.field;
+
+                Word.run(async (context) => {
+                    // Insert text at the cursor position
+                    context.document.body.insertText(field, Word.InsertLocation.replace);
+                    await context.sync();
+                    console.log(`${field} inserted into the document.`);
+                }).catch((error) => {
+                    console.error("Error inserting field:", error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
