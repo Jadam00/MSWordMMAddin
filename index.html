@@ -107,12 +107,6 @@
         <h1>Merge Fields</h1>
         <ul>
             <li class="expandable">
-		<select id="placeholderOptions">
-		      		<option value="<<FirstName>>">First Name</option>
-		      		<option value="<<LastName>>">Last Name</option>
-		      		<option value="<<Email>>">Email</option>
-		    	</select>
-		    <button onclick="insertPlaceholder()">Insert</button>
                 <ul class="hidden">
                     <li class="expandable">
                         <span>Landlord</span>
@@ -160,28 +154,6 @@
 				errorMessage.style.display = "block";
 			}
 		}
-		async function insertPlaceholder() {
-		  // Get the selected value from the dropdown
-		  const selectedPlaceholder = document.getElementById('placeholderOptions').value;
-		
-		  try {
-		    // Use Word.run to interact with the Word document
-		    await Word.run(async (context) => {
-		      // Get the user's current selection (or cursor location)
-		      const selection = context.document.getSelection();
-		
-		      // Insert the selected placeholder at the cursor position
-		      selection.insertText(selectedPlaceholder, Word.InsertLocation.replace);
-		
-		      // Sync changes to the document
-		      await context.sync();
-		      console.log(`Inserted placeholder: ${selectedPlaceholder}`);
-		    });
-		  } catch (error) {
-		    console.error(`Error inserting placeholder: ${error}`);
-		  }
-		}
-
 		// Expand/Collapse Functionality
 		document.addEventListener("DOMContentLoaded", () => {
 			// Handle expand/collapse toggling
@@ -196,28 +168,40 @@
 				});
 			});
 
-			// Merge Field Click Handler
-			document.querySelectorAll(".clickable").forEach(item => {
-				item.addEventListener("click", async function () {
-					const field = this.dataset.field;
-
-					try {
-						await Word.run(async (context) => {
-							// Get the current selection in the Word document
-							const selection = context.document.getSelection();
-
-							// Insert the merge field text at the cursor or selection
-							selection.insertText(field, Word.InsertLocation.replace);
-
-							// Synchronize the document state
-							await context.sync();
-							console.log(`Inserted: ${field}`);
-						});
-					} catch (error) {
-						console.error("Error inserting merge field:", error);
-					}
+			// Handle Drag Start
+			    document.querySelectorAll(".clickable").forEach(item => {
+				item.setAttribute("draggable", true); // Make items draggable
+				item.addEventListener("dragstart", (event) => {
+				    event.dataTransfer.setData("text/plain", item.dataset.field); // Pass merge field value
+				    console.log(`Dragging: ${item.dataset.field}`);
 				});
-			});
+			    });
+			
+			    // Enable Drop in Word
+			    document.body.addEventListener("dragover", (event) => {
+				event.preventDefault(); // Allow dropping
+			    });
+			
+			    document.body.addEventListener("drop", async (event) => {
+				event.preventDefault(); // Prevent default behavior
+			
+				const field = event.dataTransfer.getData("text/plain"); // Retrieve the merge field
+				if (field) {
+				    try {
+					await Word.run(async (context) => {
+					    // Insert the merge field at the cursor position
+					    const selection = context.document.getSelection();
+					    selection.insertText(field, Word.InsertLocation.replace);
+			
+					    // Sync changes to Word
+					    await context.sync();
+					    console.log(`Dropped and inserted: ${field}`);
+					});
+				    } catch (error) {
+					console.error("Error inserting merge field:", error);
+				    }
+				}
+			    });
 		});
 
     </script>
