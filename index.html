@@ -37,7 +37,7 @@
             Word.run(async (context) => {
                 if (!savedContentControlId) {
                     console.error("Cursor location not saved. Insert text at the beginning.");
-                    context.document.body.insertText("Hello from your Word Add-in!", Word.InsertLocation.start);
+                    context.document.body.insertText("Word addin says wassup!", Word.InsertLocation.start);
                 } else {
                     // Retrieve the saved content control
                     const contentControl = context.document.contentControls.getById(savedContentControlId);
