@@ -107,8 +107,13 @@
         <h1>Merge Fields</h1>
         <ul>
             <li class="expandable">
-                <span>Do</span>
                 <ul class="hidden">
+			<select id="placeholderOptions">
+		      		<option value="<<FirstName>>">First Name</option>
+		      		<option value="<<LastName>>">Last Name</option>
+		      		<option value="<<Email>>">Email</option>
+		    	</select>
+		    <button onclick="insertPlaceholder()">Insert</button>
                     <li class="expandable">
                         <span>Landlord</span>
                         <ul class="hidden">
@@ -154,6 +159,27 @@
 				// Show error message
 				errorMessage.style.display = "block";
 			}
+		}
+		async function insertPlaceholder() {
+		  // Get the selected value from the dropdown
+		  const selectedPlaceholder = document.getElementById('placeholderOptions').value;
+		
+		  try {
+		    // Use Word.run to interact with the Word document
+		    await Word.run(async (context) => {
+		      // Get the user's current selection (or cursor location)
+		      const selection = context.document.getSelection();
+		
+		      // Insert the selected placeholder at the cursor position
+		      selection.insertText(selectedPlaceholder, Word.InsertLocation.replace);
+		
+		      // Sync changes to the document
+		      await context.sync();
+		      console.log(`Inserted placeholder: ${selectedPlaceholder}`);
+		    });
+		  } catch (error) {
+		    console.error(`Error inserting placeholder: ${error}`);
+		  }
 		}
 
 		// Expand/Collapse Functionality
