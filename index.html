@@ -47,10 +47,10 @@
             background-color: #005a9e;
         }
 
-        input {
+        input[type="password"] {
             width: 100%;
             padding: 10px;
-            margin: 10px 0;
+            margin: 10px 0 20px;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 16px;
@@ -85,7 +85,6 @@
             font-size: 14px;
             margin: 4px 0;
             border-left: 2px solid #ddd;
-            cursor: grab;
         }
 
         .clickable:hover {
@@ -95,21 +94,20 @@
     </style>
 </head>
 <body>
-    <!-- Login Container -->
+    <!-- Password Prompt -->
     <div id="login-container" class="container">
-        <h1>Enter Your Credentials</h1>
-        <input type="email" id="email-input" placeholder="Enter email address" />
+        <h1>Enter Password</h1>
         <input type="password" id="password-input" placeholder="Enter password" />
-        <button onclick="validateCredentials()">Submit</button>
-        <p id="error-message" style="color: red; display: none;"></p>
+        <button onclick="validatePassword()">Login</button>
+        <p id="error-message" style="color: red; display: none;">Incorrect password. Try again.</p>
     </div>
 
-    <!-- Add-In Content -->
+    <!-- Main Add-In Content -->
     <div id="add-in-content" class="container hidden">
         <h1>Merge Fields</h1>
         <ul>
             <li class="expandable">
-                <span>Do</span>
+                <span>Ola</span>
                 <ul class="hidden">
                     <li class="expandable">
                         <span>Landlord</span>
@@ -143,61 +141,59 @@
     </div>
 
     <script>
-        // Email and Password Validation
-        function validateCredentials() {
-            const email = document.getElementById("email-input").value;
-            const password = document.getElementById("password-input").value;
-            const errorMessage = document.getElementById("error-message");
+        // Password validation
+		function validatePassword() {
+			const password = document.getElementById("password-input").value;
+			const errorMessage = document.getElementById("error-message");
 
-            // Check credentials
-            if (email === "justin.adam@focus-property.co.uk" && password === "jimmy") {
-                // Show the main content and hide the login container
-                document.getElementById("login-container").classList.add("hidden");
-                document.getElementById("add-in-content").classList.remove("hidden");
-            } else {
-                // Show an error message
-                errorMessage.style.display = "block";
-                errorMessage.textContent = "Invalid email or password. Please try again.";
-            }
-        }
+			if (password === "jimmy") {
+				// Hide login and show content
+				document.getElementById("login-container").classList.add("hidden");
+				document.getElementById("add-in-content").classList.remove("hidden");
+			} else {
+				// Show error message
+				errorMessage.style.display = "block";
+			}
+		}
 
-        // Drag-and-Drop Functionality
-        document.addEventListener("DOMContentLoaded", () => {
-            // Make fields draggable
-            document.querySelectorAll(".clickable").forEach(item => {
-                item.setAttribute("draggable", true);
-                item.addEventListener("dragstart", (event) => {
-                    event.dataTransfer.setData("text/plain", item.dataset.field);
-                    console.log(`Dragging: ${item.dataset.field}`);
-                });
-            });
+		// Expand/Collapse Functionality
+		document.addEventListener("DOMContentLoaded", () => {
+			// Handle expand/collapse toggling
+			document.querySelectorAll(".expandable > span").forEach(item => {
+				item.addEventListener("click", function () {
+					const parent = this.parentElement;
+					const sublist = parent.querySelector("ul");
+					if (sublist) {
+						sublist.classList.toggle("hidden");
+						parent.classList.toggle("open");
+					}
+				});
+			});
 
-            // Allow dropping in the Word document
-            document.body.addEventListener("dragover", (event) => {
-                event.preventDefault(); // Allow dragover
-            });
+			// Merge Field Click Handler
+			document.querySelectorAll(".clickable").forEach(item => {
+				item.addEventListener("click", async function () {
+					const field = this.dataset.field;
 
-            document.body.addEventListener("drop", async (event) => {
-                event.preventDefault(); // Prevent default drop behavior
+					try {
+						await Word.run(async (context) => {
+							// Get the current selection in the Word document
+							const selection = context.document.getSelection();
 
-                const field = event.dataTransfer.getData("text/plain"); // Get the dragged field
-                if (field) {
-                    try {
-                        await Word.run(async (context) => {
-                            const selection = context.document.getSelection();
+							// Insert the merge field text at the cursor or selection
+							selection.insertText(field, Word.InsertLocation.replace);
 
-                            // Insert the dragged field at the cursor or selection
-                            selection.insertText(field, Word.InsertLocation.replace);
+							// Synchronize the document state
+							await context.sync();
+							console.log(`Inserted: ${field}`);
+						});
+					} catch (error) {
+						console.error("Error inserting merge field:", error);
+					}
+				});
+			});
+		});
 
-                            await context.sync(); // Sync changes with Word
-                            console.log(`Dropped and inserted: ${field}`);
-                        });
-                    } catch (error) {
-                        console.error("Error inserting merge field:", error);
-                    }
-                }
-            });
-        });
     </script>
 </body>
 </html>
